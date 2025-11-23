@@ -17,6 +17,21 @@ const DEFAULT_COMIC = {
   bgm: DEFAULT_BGM
 };
 
+const SANGUO_COMIC = {
+  id: 'sanguo-taoyuan',
+  title: "SANGUO TAOYUAN",
+  subtitle: "The Peach Garden Oath",
+  images: [
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_cover.png",
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_00.png",
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_01.png",
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_02.png",
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_03.png",
+    "https://pub-c98d5902eedf42f6a9765dfad981fd88.r2.dev/sanguo_taoyuan/sanguo_taoyuan_04.png"
+  ],
+  bgm: DEFAULT_BGM
+};
+
 // --- 通用组件 ---
 const FogLayer = () => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -47,7 +62,7 @@ const FogLayer = () => (
 const App = () => {
   // 视图状态: 'library' | 'create' | 'cover' | 'read'
   const [view, setView] = useState('library');
-  const [library, setLibrary] = useState([DEFAULT_COMIC]);
+  const [library, setLibrary] = useState([DEFAULT_COMIC, SANGUO_COMIC]);
   const [activeComic, setActiveComic] = useState(null);
 
   // 阅读器状态
@@ -56,7 +71,7 @@ const App = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  
+
   const audioRef = useRef(null);
   const startX = useRef(null);
   const currentX = useRef(null);
@@ -163,7 +178,6 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentPage, view, showTutorial]);
 
-
   // --- 视图渲染 ---
 
   // 1. 书架 (Library View)
@@ -179,29 +193,18 @@ const App = () => {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Create New Card */}
-            <button 
-              onClick={goToCreate}
-              className="group aspect-[2/3] rounded-sm border border-dashed border-white/10 hover:border-white/30 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 text-neutral-500 hover:text-white"
-            >
-              <div className="p-4 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-                <Plus size={32} />
-              </div>
-              <span className="text-xs tracking-widest uppercase font-medium">Upload New Comic</span>
-            </button>
-
             {/* Comic Cards */}
             {library.map((comic) => (
-              <div 
-                key={comic.id} 
+              <div
+                key={comic.id}
                 onClick={() => selectComic(comic)}
                 className="group relative aspect-[2/3] cursor-pointer perspective-1000"
               >
                 {/* Card Container with 3D Hover Effect */}
                 <div className="absolute inset-0 bg-neutral-900 rounded-sm overflow-hidden shadow-lg transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-2xl border border-white/5">
-                  <img 
-                    src={comic.images[0]} 
-                    alt={comic.title} 
+                  <img
+                    src={comic.images[0]}
+                    alt={comic.title}
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 flex flex-col justify-end">
@@ -211,6 +214,17 @@ const App = () => {
                 </div>
               </div>
             ))}
+
+            {/* Create New Card (Moved to end) */}
+            <button
+              onClick={goToCreate}
+              className="group aspect-[2/3] rounded-sm border border-dashed border-white/10 hover:border-white/30 hover:bg-white/5 transition-all flex flex-col items-center justify-center gap-4 text-neutral-500 hover:text-white"
+            >
+              <div className="p-4 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                <Plus size={32} />
+              </div>
+              <span className="text-xs tracking-widest uppercase font-medium">Upload New Comic</span>
+            </button>
           </div>
         </div>
       </div>
@@ -222,15 +236,15 @@ const App = () => {
     return <CreateComicForm onCancel={goToLibrary} onSubmit={handleCreateSubmit} />;
   }
 
-  // 3. 封面/入口页 (Cover View - 原来的首页)
+  // 3. 封面/入口页 (Cover View)
   if (view === 'cover' && activeComic) {
     return (
       <div className="h-screen w-full bg-neutral-950 text-white flex flex-col items-center justify-center relative overflow-hidden font-sans">
         <FogLayer />
-        
+
         {/* 返回按钮 */}
-        <button 
-          onClick={goToLibrary} 
+        <button
+          onClick={goToLibrary}
           className="absolute top-6 left-6 z-50 p-2 text-white/50 hover:text-white transition-colors flex items-center gap-2"
         >
           <ArrowLeft size={20} />
@@ -244,7 +258,7 @@ const App = () => {
           <p className="text-xs md:text-sm text-neutral-400 mb-16 tracking-[0.5em] uppercase font-medium border-t border-white/10 pt-4">
             {activeComic.subtitle}
           </p>
-          <button 
+          <button
             onClick={startReading}
             className="group relative px-10 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full transition-all duration-500 hover:scale-105 hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(220,38,38,0.3)]"
           >
@@ -258,9 +272,9 @@ const App = () => {
   // 4. 阅读器 (Reader View)
   if (view === 'read' && activeComic) {
     const images = activeComic.images;
-    
+
     return (
-      <div 
+      <div
         className={`h-screen w-screen bg-neutral-900 overflow-hidden flex flex-col items-center justify-center relative touch-none perspective-camera font-sans ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onTouchStart={(e) => onStart(e.targetTouches[0].clientX)}
         onTouchMove={(e) => onMove(e.targetTouches[0].clientX)}
@@ -275,24 +289,24 @@ const App = () => {
 
         {/* Top Bar */}
         <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50 pointer-events-none">
-           <div className="flex flex-col gap-1 pointer-events-auto cursor-pointer" onClick={goToLibrary}>
-              <div className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-1">
-                 <ArrowLeft size={14} />
-                 <span className="text-[10px] uppercase tracking-widest">Library</span>
-              </div>
-              <span className="text-white/90 font-medium text-lg tracking-tight">{activeComic.title}</span>
-           </div>
-  
-           <div className="flex items-center gap-3 pointer-events-auto">
-              {currentPage < images.length && (
-                <button onClick={downloadCurrentPage} className="p-3 bg-white/5 hover:bg-white/10 rounded-full backdrop-blur-xl border border-white/5 transition-all active:scale-95 group">
-                  <Download size={18} className={`text-white/60 group-hover:text-white/90 transition-colors ${isDownloading ? 'animate-bounce' : ''}`} />
-                </button>
-              )}
-              <button onClick={toggleAudio} className="p-3 bg-white/5 hover:bg-white/10 rounded-full backdrop-blur-xl border border-white/5 transition-all active:scale-95">
-                  {isMuted ? <VolumeX size={18} className="text-white/60" /> : <Volume2 size={18} className="text-white/90" />}
+          <div className="flex flex-col gap-1 pointer-events-auto cursor-pointer" onClick={goToLibrary}>
+            <div className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-1">
+              <ArrowLeft size={14} />
+              <span className="text-[10px] uppercase tracking-widest">Library</span>
+            </div>
+            <span className="text-white/90 font-medium text-lg tracking-tight">{activeComic.title}</span>
+          </div>
+
+          <div className="flex items-center gap-3 pointer-events-auto">
+            {currentPage < images.length && (
+              <button onClick={downloadCurrentPage} className="p-3 bg-white/5 hover:bg-white/10 rounded-full backdrop-blur-xl border border-white/5 transition-all active:scale-95 group">
+                <Download size={18} className={`text-white/60 group-hover:text-white/90 transition-colors ${isDownloading ? 'animate-bounce' : ''}`} />
               </button>
-           </div>
+            )}
+            <button onClick={toggleAudio} className="p-3 bg-white/5 hover:bg-white/10 rounded-full backdrop-blur-xl border border-white/5 transition-all active:scale-95">
+              {isMuted ? <VolumeX size={18} className="text-white/60" /> : <Volume2 size={18} className="text-white/90" />}
+            </button>
+          </div>
         </div>
 
         {/* Tutorial */}
@@ -300,23 +314,23 @@ const App = () => {
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none">
             <div className="bg-black/60 backdrop-blur-md p-8 rounded-2xl flex flex-col items-center gap-6 animate-in fade-in duration-700 zoom-in-95 border border-white/10 shadow-2xl">
               <div className="relative w-24 h-12 flex items-center justify-center">
-                 <Hand className="text-white w-10 h-10 animate-[swipe-gesture_1.5s_infinite_ease-in-out]" />
+                <Hand className="text-white w-10 h-10 animate-[swipe-gesture_1.5s_infinite_ease-in-out]" />
               </div>
               <div className="flex flex-col items-center gap-1">
-                  <p className="text-white/90 text-sm font-bold tracking-widest uppercase">Swipe to Read</p>
-                  <p className="text-white/40 text-xs tracking-tight">Slide Left for Next Page</p>
+                <p className="text-white/90 text-sm font-bold tracking-widest uppercase">Swipe to Read</p>
+                <p className="text-white/40 text-xs tracking-tight">Slide Left for Next Page</p>
               </div>
             </div>
           </div>
         )}
-  
+
         {/* Book Container */}
-        <div className="relative w-[85vw] max-w-md aspect-[2/3] z-30 transform-style-3d transition-all duration-1000 ease-out mt-4 pointer-events-none"> 
+        <div className="relative w-[85vw] max-w-md aspect-[2/3] z-30 transform-style-3d transition-all duration-1000 ease-out mt-4 pointer-events-none">
           {images.map((src, index) => {
             const isFlipped = index < currentPage;
             let zIndex = isFlipped ? index : images.length - index;
             let translateZ = isFlipped ? index * 0.5 : (images.length - index) * 0.5;
-  
+
             return (
               <div
                 key={index}
@@ -329,42 +343,42 @@ const App = () => {
               >
                 {/* Front */}
                 <div className="absolute inset-0 backface-hidden bg-[#0a0a0a] overflow-hidden rounded-r-sm shadow-[inset_2px_0_5px_rgba(0,0,0,0.5)]">
-                   <img src={src} alt={`Page ${index + 1}`} className="w-full h-full object-cover select-none pointer-events-none" loading="eager" />
-                   <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black/50 to-transparent pointer-events-none"></div>
-                   <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none mix-blend-overlay"></div>
+                  <img src={src} alt={`Page ${index + 1}`} className="w-full h-full object-cover select-none pointer-events-none" loading="eager" />
+                  <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black/50 to-transparent pointer-events-none"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none mix-blend-overlay"></div>
                 </div>
                 {/* Back */}
                 <div className="absolute inset-0 backface-hidden bg-neutral-800 flex items-center justify-center rounded-l-sm overflow-hidden" style={{ transform: 'rotateY(180deg)' }}>
-                   <div className="text-neutral-600 font-sans font-bold text-6xl opacity-10 select-none">{index + 1}</div>
-                   <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/40 to-transparent pointer-events-none"></div>
+                  <div className="text-neutral-600 font-sans font-bold text-6xl opacity-10 select-none">{index + 1}</div>
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/40 to-transparent pointer-events-none"></div>
                 </div>
               </div>
             );
           })}
-          
+
           {/* Back Cover */}
           <div className="absolute inset-0 bg-neutral-900 -z-10 rounded-sm shadow-2xl flex items-center justify-center border border-white/5" style={{ transform: 'translateZ(-2px)' }}>
-               <div className="text-center opacity-60 hover:opacity-100 transition-opacity pointer-events-auto">
-                  <button onClick={resetBook} className="flex flex-col items-center gap-3 group">
-                    <div className="p-4 bg-white/5 rounded-full group-hover:bg-white/10 transition-colors backdrop-blur-sm">
-                      <RotateCcw size={24} className="text-white/80 group-hover:rotate-[-180deg] transition-transform duration-700" />
-                    </div>
-                    <p className="text-white/50 text-xs tracking-widest uppercase font-medium">Replay</p>
-                  </button>
-               </div>
+            <div className="text-center opacity-60 hover:opacity-100 transition-opacity pointer-events-auto">
+              <button onClick={resetBook} className="flex flex-col items-center gap-3 group">
+                <div className="p-4 bg-white/5 rounded-full group-hover:bg-white/10 transition-colors backdrop-blur-sm">
+                  <RotateCcw size={24} className="text-white/80 group-hover:rotate-[-180deg] transition-transform duration-700" />
+                </div>
+                <p className="text-white/50 text-xs tracking-widest uppercase font-medium">Replay</p>
+              </button>
+            </div>
           </div>
         </div>
-  
+
         {/* Progress */}
         <div className="absolute bottom-8 z-40 w-full flex justify-center pointer-events-none">
           <div className="flex items-center gap-3 px-6 py-4 bg-neutral-900/40 backdrop-blur-xl rounded-full border border-white/5 shadow-2xl">
-              {images.map((_, i) => (
-                  <div key={i} className={`rounded-full transition-all duration-500 ${i === currentPage ? 'bg-white w-8 h-1 opacity-100 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-white w-1.5 h-1.5 opacity-20'}`} />
-              ))}
-               <div className={`rounded-full transition-all duration-500 ${currentPage === images.length ? 'bg-red-500 w-2 h-2 opacity-80' : 'bg-white w-1 h-1 opacity-10'}`}></div>
+            {images.map((_, i) => (
+              <div key={i} className={`rounded-full transition-all duration-500 ${i === currentPage ? 'bg-white w-8 h-1 opacity-100 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-white w-1.5 h-1.5 opacity-20'}`} />
+            ))}
+            <div className={`rounded-full transition-all duration-500 ${currentPage === images.length ? 'bg-red-500 w-2 h-2 opacity-80' : 'bg-white w-1 h-1 opacity-10'}`}></div>
           </div>
         </div>
-        
+
         <style>{`
             .perspective-camera { perspective: 2000px; }
             .transform-style-3d { transform-style: preserve-3d; }
@@ -387,7 +401,7 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
     setFiles(selectedFiles);
-    
+
     // 生成本地预览链接
     const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
     setPreviews(newPreviews);
@@ -396,7 +410,7 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title || files.length === 0) return;
-    
+
     // 这里直接使用生成的 Blob URL 作为图片链接
     // 注意：实际生产环境应该先上传到服务器/R2，这里仅为 Demo
     onSubmit({
@@ -413,12 +427,12 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
           <Upload size={24} className="text-red-500" />
           <span>UPLOAD COMIC</span>
         </h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-widest text-neutral-500">Main Title</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. RESIDENT EVIL"
@@ -429,8 +443,8 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
 
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-widest text-neutral-500">Subtitle</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="e.g. The Graphic Novel"
@@ -441,9 +455,9 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-widest text-neutral-500">Pages (Select Multiple)</label>
             <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:bg-white/5 transition-colors relative cursor-pointer group">
-              <input 
-                type="file" 
-                multiple 
+              <input
+                type="file"
+                multiple
                 accept="image/*"
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -466,15 +480,15 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
           </div>
 
           <div className="pt-6 flex gap-4">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onCancel}
               className="flex-1 px-6 py-4 border border-white/10 rounded text-xs uppercase tracking-widest hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="flex-[2] px-6 py-4 bg-red-900/20 border border-red-900/50 text-red-100 rounded text-xs uppercase tracking-widest hover:bg-red-900/40 transition-colors font-bold shadow-[0_0_15px_rgba(220,38,38,0.2)]"
             >
               Initialize Upload
