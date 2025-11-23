@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, RotateCcw, Hand, Download, Plus, Image as ImageIcon, ArrowLeft, Upload } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Hand, Download, Plus, Image as ImageIcon, ArrowLeft, Upload, Loader2 } from 'lucide-react';
+
+// --- 配置 ---
+// Determine domain based on current hostname to support local testing with 'wrangler pages dev'
+// In production, use the custom R2 domain. locally use relative path (proxied).
+const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const R2_DOMAIN = isLocal ? "" : "https://r2.keithhe.com";
 
 // --- 默认数据 ---
 const DEFAULT_BGM = "https://cdn.freesound.org/previews/258/258667_4486188-lq.mp3";
@@ -64,6 +70,7 @@ const App = () => {
   const [view, setView] = useState('library');
   const [library, setLibrary] = useState([DEFAULT_COMIC, SANGUO_COMIC]);
   const [activeComic, setActiveComic] = useState(null);
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(true);
 
   // 阅读器状态
   const [currentPage, setCurrentPage] = useState(0);
@@ -75,6 +82,31 @@ const App = () => {
   const audioRef = useRef(null);
   const startX = useRef(null);
   const currentX = useRef(null);
+
+  // --- 初始化数据 ---
+  useEffect(() => {
+    const fetchLibrary = async () => {
+      try {
+        const res = await fetch('/api/library');
+        if (res.ok) {
+          const data = await res.json();
+          // 处理图片链接
+          const processedData = data.map(comic => ({
+            ...comic,
+            images: comic.images.map(img =>
+              img.startsWith('http') ? img : `${R2_DOMAIN}/${img}`
+            )
+          }));
+          setLibrary(prev => [...prev, ...processedData]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch library:", error);
+      } finally {
+        setIsLoadingLibrary(false);
+      }
+    };
+    fetchLibrary();
+  }, []);
 
   // --- 导航逻辑 ---
   const goToLibrary = () => {
@@ -100,9 +132,31 @@ const App = () => {
     }
   };
 
-  const handleCreateSubmit = (newComic) => {
-    setLibrary([...library, { ...newComic, id: Date.now().toString(), bgm: DEFAULT_BGM }]);
-    setView('library');
+  const handleCreateSubmit = async (formData) => {
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const newComic = await res.json();
+        // 处理新上传的漫画图片链接
+        const processedComic = {
+          ...newComic,
+          images: newComic.images.map(img =>
+            img.startsWith('http') ? img : `${R2_DOMAIN}/${img}`
+          )
+        };
+        setLibrary(prev => [...prev, processedComic]);
+        setView('library');
+      } else {
+        alert("Upload failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Upload error. Check console for details.");
+    }
   };
 
   // --- 3D 阅读器逻辑 (复用之前核心代码) ---
@@ -397,6 +451,7 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
   const [subtitle, setSubtitle] = useState('');
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -407,17 +462,20 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
     setPreviews(newPreviews);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || files.length === 0) return;
+    if (!title || files.length === 0 || isUploading) return;
 
-    // 这里直接使用生成的 Blob URL 作为图片链接
-    // 注意：实际生产环境应该先上传到服务器/R2，这里仅为 Demo
-    onSubmit({
-      title,
-      subtitle: subtitle || "Custom Upload",
-      images: previews // 直接传递 Blob URLs
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('subtitle', subtitle || "Custom Upload");
+    files.forEach(file => {
+      formData.append('images', file);
     });
+
+    await onSubmit(formData);
+    setIsUploading(false);
   };
 
   return (
@@ -438,6 +496,7 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
               placeholder="e.g. RESIDENT EVIL"
               className="w-full bg-black/50 border border-white/10 rounded p-4 text-white placeholder:text-neutral-700 focus:border-red-500/50 focus:outline-none transition-colors"
               required
+              disabled={isUploading}
             />
           </div>
 
@@ -449,12 +508,13 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="e.g. The Graphic Novel"
               className="w-full bg-black/50 border border-white/10 rounded p-4 text-white placeholder:text-neutral-700 focus:border-white/30 focus:outline-none transition-colors"
+              disabled={isUploading}
             />
           </div>
 
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-widest text-neutral-500">Pages (Select Multiple)</label>
-            <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:bg-white/5 transition-colors relative cursor-pointer group">
+            <div className={`border-2 border-dashed border-white/10 rounded-lg p-8 text-center transition-colors relative cursor-pointer group ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'}`}>
               <input
                 type="file"
                 multiple
@@ -462,6 +522,7 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 required
+                disabled={isUploading}
               />
               <div className="flex flex-col items-center gap-2 text-neutral-500 group-hover:text-white transition-colors">
                 <ImageIcon size={32} />
@@ -484,14 +545,23 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
               type="button"
               onClick={onCancel}
               className="flex-1 px-6 py-4 border border-white/10 rounded text-xs uppercase tracking-widest hover:bg-white/5 transition-colors"
+              disabled={isUploading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-[2] px-6 py-4 bg-red-900/20 border border-red-900/50 text-red-100 rounded text-xs uppercase tracking-widest hover:bg-red-900/40 transition-colors font-bold shadow-[0_0_15px_rgba(220,38,38,0.2)]"
+              disabled={isUploading}
+              className="flex-[2] px-6 py-4 bg-red-900/20 border border-red-900/50 text-red-100 rounded text-xs uppercase tracking-widest hover:bg-red-900/40 transition-colors font-bold shadow-[0_0_15px_rgba(220,38,38,0.2)] flex items-center justify-center gap-2"
             >
-              Initialize Upload
+              {isUploading ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Uploading...
+                </>
+              ) : (
+                "Initialize Upload"
+              )}
             </button>
           </div>
         </form>
