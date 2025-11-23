@@ -265,6 +265,38 @@ const App = () => {
                     <h2 className="text-2xl font-bold tracking-tight mb-1 text-white">{comic.title}</h2>
                     <p className="text-xs text-neutral-400 uppercase tracking-widest">{comic.subtitle}</p>
                   </div>
+                  {/* Delete button - only show for uploaded comics */}
+                  {!comic.id.startsWith('default-') && !comic.id.startsWith('sanguo-') && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!confirm('确定要删除这个漫画吗？此操作无法撤销。')) return;
+                        try {
+                          const res = await fetch('/api/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ comicId: comic.id })
+                          });
+                          if (res.ok) {
+                            setLibrary(prev => prev.filter(c => c.id !== comic.id));
+                          } else {
+                            alert("删除失败，请重试。");
+                          }
+                        } catch (error) {
+                          console.error("Delete error:", error);
+                          alert("删除出错，请查看控制台。");
+                        }
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-red-900/80 hover:bg-red-900 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title="删除漫画"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
