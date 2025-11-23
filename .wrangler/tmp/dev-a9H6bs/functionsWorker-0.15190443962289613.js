@@ -55,6 +55,39 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
     return Reflect.apply(target, thisArg, argArray);
   }
 });
+async function onRequestPost(context) {
+  const { request, env } = context;
+  const bucket = env.BUCKET;
+  try {
+    const { comicId } = await request.json();
+    if (!comicId) {
+      return new Response("Missing comicId", { status: 400 });
+    }
+    let library = [];
+    const libraryObject = await bucket.get("library.json");
+    if (libraryObject) {
+      library = await libraryObject.json();
+    }
+    const comicToDelete = library.find((c) => c.id === comicId);
+    if (!comicToDelete) {
+      return new Response("Comic not found", { status: 404 });
+    }
+    for (const imagePath of comicToDelete.images) {
+      if (!imagePath.startsWith("http")) {
+        await bucket.delete(imagePath);
+      }
+    }
+    library = library.filter((c) => c.id !== comicId);
+    await bucket.put("library.json", JSON.stringify(library));
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+__name(onRequestPost, "onRequestPost");
+__name2(onRequestPost, "onRequestPost");
 async function onRequestGet(context) {
   const { env } = context;
   const bucket = env.BUCKET;
@@ -75,7 +108,7 @@ async function onRequestGet(context) {
 }
 __name(onRequestGet, "onRequestGet");
 __name2(onRequestGet, "onRequestGet");
-async function onRequestPost(context) {
+async function onRequestPost2(context) {
   const { request, env } = context;
   const bucket = env.BUCKET;
   try {
@@ -118,8 +151,8 @@ async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }
-__name(onRequestPost, "onRequestPost");
-__name2(onRequestPost, "onRequestPost");
+__name(onRequestPost2, "onRequestPost2");
+__name2(onRequestPost2, "onRequestPost");
 async function onRequestGet2(context) {
   const { env, params } = context;
   const path = params.path;
@@ -144,6 +177,13 @@ __name(onRequestGet2, "onRequestGet2");
 __name2(onRequestGet2, "onRequestGet");
 var routes = [
   {
+    routePath: "/api/delete",
+    mountPath: "/api",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost]
+  },
+  {
     routePath: "/api/library",
     mountPath: "/api",
     method: "GET",
@@ -155,7 +195,7 @@ var routes = [
     mountPath: "/api",
     method: "POST",
     middlewares: [],
-    modules: [onRequestPost]
+    modules: [onRequestPost2]
   },
   {
     routePath: "/comics/:path*",

@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ../.wrangler/tmp/bundle-sK556h/checked-fetch.js
+// ../.wrangler/tmp/bundle-ydYtRV/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -27,6 +27,40 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
   }
 });
 
+// api/delete.js
+async function onRequestPost(context) {
+  const { request, env } = context;
+  const bucket = env.BUCKET;
+  try {
+    const { comicId } = await request.json();
+    if (!comicId) {
+      return new Response("Missing comicId", { status: 400 });
+    }
+    let library = [];
+    const libraryObject = await bucket.get("library.json");
+    if (libraryObject) {
+      library = await libraryObject.json();
+    }
+    const comicToDelete = library.find((c) => c.id === comicId);
+    if (!comicToDelete) {
+      return new Response("Comic not found", { status: 404 });
+    }
+    for (const imagePath of comicToDelete.images) {
+      if (!imagePath.startsWith("http")) {
+        await bucket.delete(imagePath);
+      }
+    }
+    library = library.filter((c) => c.id !== comicId);
+    await bucket.put("library.json", JSON.stringify(library));
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+__name(onRequestPost, "onRequestPost");
+
 // api/library.js
 async function onRequestGet(context) {
   const { env } = context;
@@ -49,7 +83,7 @@ async function onRequestGet(context) {
 __name(onRequestGet, "onRequestGet");
 
 // api/upload.js
-async function onRequestPost(context) {
+async function onRequestPost2(context) {
   const { request, env } = context;
   const bucket = env.BUCKET;
   try {
@@ -92,7 +126,7 @@ async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }
-__name(onRequestPost, "onRequestPost");
+__name(onRequestPost2, "onRequestPost");
 
 // comics/[[path]].js
 async function onRequestGet2(context) {
@@ -120,6 +154,13 @@ __name(onRequestGet2, "onRequestGet");
 // ../.wrangler/tmp/pages-xDh6hm/functionsRoutes-0.5475080177161504.mjs
 var routes = [
   {
+    routePath: "/api/delete",
+    mountPath: "/api",
+    method: "POST",
+    middlewares: [],
+    modules: [onRequestPost]
+  },
+  {
     routePath: "/api/library",
     mountPath: "/api",
     method: "GET",
@@ -131,7 +172,7 @@ var routes = [
     mountPath: "/api",
     method: "POST",
     middlewares: [],
-    modules: [onRequestPost]
+    modules: [onRequestPost2]
   },
   {
     routePath: "/comics/:path*",
@@ -629,7 +670,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-sK556h/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-ydYtRV/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -661,7 +702,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-sK556h/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-ydYtRV/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
