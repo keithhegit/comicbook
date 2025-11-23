@@ -265,8 +265,8 @@ const App = () => {
                     <h2 className="text-2xl font-bold tracking-tight mb-1 text-white">{comic.title}</h2>
                     <p className="text-xs text-neutral-400 uppercase tracking-widest">{comic.subtitle}</p>
                   </div>
-                  {/* Delete button - only show for uploaded comics */}
-                  {!comic.id.startsWith('default-') && !comic.id.startsWith('sanguo-') && (
+                  {/* Delete button - only show for uploaded comics and admin user */}
+                  {!comic.id.startsWith('default-') && !comic.id.startsWith('sanguo-') && currentUser === 'admin' && (
                     <button
                       onClick={async (e) => {
                         e.stopPropagation();
@@ -487,10 +487,26 @@ const CreateComicForm = ({ onCancel, onSubmit }) => {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    setFiles(selectedFiles);
+
+    // 验证文件类型 - 只允许图片
+    const imageFiles = selectedFiles.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`"${file.name}" 不是图片,已忽略`);
+        return false;
+      }
+      return true;
+    });
+
+    if (imageFiles.length === 0) {
+      alert('请选择图片文件!');
+      e.target.value = '';
+      return;
+    }
+
+    setFiles(imageFiles);
 
     // 生成本地预览链接
-    const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
+    const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
     setPreviews(newPreviews);
   };
 
